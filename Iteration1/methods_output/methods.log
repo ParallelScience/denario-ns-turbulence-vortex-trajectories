@@ -1,0 +1,344 @@
+
+###### PROMPT BEGINS ########
+Human: You are provided with a data description and an idea for a scientific paper. Your task is to think about the methods to use in order to carry it out. If this is not first iteration, you will also be provided with the previous research plan along with some feedback on it. If this is the case, take into account the feedback provided when designing the new research plan.
+
+Follow these instructions:
+- generate a detailed description of the methodology that will be used to perform the research project.
+- The description should clearly outline the steps, techniques, and rationale derived from the exploratory data analysis (EDA).
+- The focus should be strictly on the methods and workflow for this specific project to be performed. **do not include** any discussion of future directions, future work, project extensions, or limitations.
+- The description should be written as if it were a senior researcher explaining to her research assistant how to perform the research necessary for this project.
+- Just provide the methods, do not add a sentence at the beginning saying showing your thinking process
+- Your report will be sent to coding agents. Thus, do not write code here.
+- The research plan should include no more than 8 steps. Each of these steps can have several substeps
+- If feedback is present, you are allowed to edit steps and also remove steps if they are not needed for new iterations
+
+Data description:
+
+# NS Simulation Dataset — 3D Driven Turbulence (128³)
+
+## Overview
+
+This dataset contains 1001 snapshots from a 3D isothermal hydrodynamic driven turbulence simulation run with AthenaK. The simulation models subsonic turbulence driven on large scales in a periodic unit box. The data are stored as Legacy VTK binary files on the Hugging Face Hub at `pedrota2000/NS_simulation` (HF token: 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).
+
+**A 13-snapshot sample has been pre-downloaded** to `/home/node/work/projects/ns_turbulence_v1/data_sample/`, covering indices 18903, 18953, 19003, 19053, 19103, 19203, 19303, 19403, 19503, 19603, 19703, 19803, 19903.
+
+For full analysis, **all 1001 files must be downloaded** from Hugging Face using `huggingface_hub.hf_hub_download` with `repo_id="pedrota2000/NS_simulation"`, `repo_type="dataset"`, `token="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"`. Download to a local directory such as `/home/node/work/projects/ns_turbulence_v1/data/`. Files follow the naming pattern `Turb.hydro_w.NNNNN.vtk` where NNNNN ranges from 18903 to 19903. Each file is ~42 MB, total ~42 GB.
+
+## File Format and Reading
+
+Files are Legacy VTK binary (DATASET STRUCTURED_POINTS) and can be read with `pyvista`:
+
+```python
+import pyvista as pv
+mesh = pv.read("/home/node/work/projects/ns_turbulence_v1/data/Turb.hydro_w.18903.vtk")
+dens = mesh["dens"].reshape(128, 128, 128)
+velx = mesh["velx"].reshape(128, 128, 128)
+vely = mesh["vely"].reshape(128, 128, 128)
+velz = mesh["velz"].reshape(128, 128, 128)
+```
+
+## Grid Geometry
+
+- **Dimensions**: 128 × 128 × 128 cells (128³ = 2,097,152 cells per field)
+- **Domain**: [-0.5, 0.5]³ (unit box, periodic on all faces)
+- **Cell spacing**: dx = dy = dz = 1/128 ≈ 0.0078125
+- **Cell centres**: from -0.5 + dx/2 to 0.5 - dx/2 in each dimension
+
+## Data Fields (per file, cell-centred scalars)
+
+| Field | Shape (reshaped) | dtype | Physical range (observed) | Description |
+|-------|-----------------|-------|---------------------------|-------------|
+| `dens` | (128,128,128) | float32 | [0.985, 1.007] | Mass density ρ (near-unity; isothermal subsonic) |
+| `velx` | (128,128,128) | float32 | [-0.865, 0.691] | Velocity x-component v_x |
+| `vely` | (128,128,128) | float32 | [-0.687, 0.717] | Velocity y-component v_y |
+| `velz` | (128,128,128) | float32 | [-0.795, 0.853] | Velocity z-component v_z |
+| `s_00` | (128,128,128) | float32 | ≈ 0.047 (uniform) | Passive scalar tracer (uniform; not useful for dynamics) |
+
+## Temporal Structure
+
+- **Total snapshots**: 1001 (indices 18903–19903 inclusive)
+- **Simulation time**: t ≈ 189.03 to 199.03 (output cadence Δt = 0.01 per snapshot)
+- **Total time span**: Δt_total ≈ 10.0 simulation time units
+- **Snapshot index → simulation time**: t = index × 0.01
+
+## Simulation Parameters
+
+- Code: AthenaK
+- EOS: Isothermal, sound speed c_s = 5.0
+- Turbulence driving: solenoidal (divergence-free), dedt = 1×10⁻⁴, correlation time τ_corr = 5.0
+- Driving wavenumber: n_low=1, n_high=3 (peak at n=2 → large-scale forcing)
+- Time integrator: RK2, CFL = 0.3
+- Riemann solver: HLLE, reconstruction: PLM
+- Boundary conditions: periodic on all faces
+
+## Vorticity
+
+The 3D vorticity vector ω = ∇ × v has components:
+- ω_x = ∂v_z/∂y − ∂v_y/∂z
+- ω_y = ∂v_x/∂z − ∂v_z/∂x
+- ω_z = ∂v_y/∂x − ∂v_x/∂y
+
+Observed vorticity magnitude |ω|: mean ≈ 6.4, max ≈ 28.4 (at t=189.03).
+Vorticity is computed via finite differences (np.gradient) on the 128³ grid with spacing dx=0.0078125.
+
+## Research Objective
+
+**Primary task:** Identify vortices in the 3D turbulence simulation and track their centres of vorticity through time. For each identified vortex, compute how its centre position evolves as a function of simulation time. Then statistically characterise whether the vortex centre trajectories are consistent with:
+1. A **Gaussian random walk** (Brownian motion): step sizes drawn from a Gaussian distribution, MSD ∝ t (normal diffusion)
+2. A **Lévy flight**: step sizes drawn from a heavy-tailed (power-law) distribution, MSD ∝ t^α with α > 1 (superdiffusion)
+
+**Methodology hints:**
+- **Vortex detection**: Use the Q-criterion (Q = 0.5*(|Ω|² − |S|²) > threshold, where Ω is the antisymmetric part and S is the symmetric part of the velocity gradient tensor ∇v) or the λ₂ criterion. Label connected regions above threshold as individual vortex structures. Alternatively use vorticity magnitude thresholding (|ω| > threshold × mean(|ω|)).
+- **Centre of vorticity**: For each labelled vortex region, compute the vorticity-weighted centroid: x_c = Σ(|ω_i| * x_i) / Σ|ω_i| for x, y, z coordinates.
+- **Vortex tracking**: Match vortices across consecutive timesteps using nearest-neighbour matching on centroid positions (Hungarian algorithm or simple greedy nearest-neighbour). Handle vortex birth/death (merge/split events).
+- **Trajectory statistics**: For each tracked vortex trajectory of length N_t, compute step displacements Δr_i = r_{i+1} − r_i. Analyse the distribution of |Δr| — fit to Gaussian vs. Lévy (stable distribution or power-law tail). Compute MSD(τ) = <|r(t+τ) − r(t)|²> and fit the diffusion exponent α.
+- **Periodic boundaries**: The domain is periodic. Use minimum-image convention for displacement calculations: Δx = ((x2−x1+0.5) mod 1.0) − 0.5.
+
+## Storage and Memory Considerations
+
+- Each VTK file: ~42 MB on disk, ~40 MB in memory (5 fields × 128³ × 4 bytes)
+- All 1001 files: ~42 GB on disk — download to `/home/node/work/projects/ns_turbulence_v1/data/`
+- Process files sequentially (one at a time) to avoid memory exhaustion
+- For parallel downloading: use up to 8 threads
+- The pre-downloaded sample at `/home/node/work/projects/ns_turbulence_v1/data_sample/` can be used for algorithm development before running on the full dataset
+
+
+Idea:
+**Title**: Multiscale Statistical Mapping of Lagrangian Vortex Diffusion in 3D Isothermal Turbulence
+
+**Description**: This study quantifies vortex transport regimes by processing the 1001-snapshot AthenaK dataset through a robust, noise-mitigating pipeline. To ensure physical validity, velocity fields are pre-processed with a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical artifacts before computing the velocity gradient tensor $\nabla \mathbf{v}$ and the Q-criterion. Vortices are identified via an adaptive, local-thresholding scheme ($Q > \text{local\_mean}(Q) + 3\sigma_{\text{local}}$) to account for spatial intermittency, with only structures persisting for $\geq 10$ timesteps retained to filter transient noise. We track these persistent vorticity-weighted centroids using a greedy nearest-neighbor approach optimized for periodic boundaries via the minimum-image convention. Statistical characterization is performed by calculating the Mean Squared Displacement (MSD) $\langle |r(t+\tau) - r(t)|^2 \rangle \propto \tau^\alpha$ and fitting step-size distributions to Gaussian and Lévy stable models. The final analysis integrates 3D trajectory visualizations, log-log MSD plots, and Kolmogorov-Smirnov goodness-of-fit tests to isolate the diffusion exponent $\alpha$ and determine whether vortex trajectories exhibit Brownian motion or Lévy-flight superdiffusion within the resolved inertial range.
+
+Previous research plan:
+1. **Data Acquisition and Pre-processing**: Download the 1001-snapshot dataset using 8 parallel threads. For each snapshot, load the velocity fields and apply a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical noise. Compute the velocity gradient tensor $\nabla \mathbf{v}$ using `np.gradient` with `np.pad(..., mode='wrap')` to correctly handle periodic boundaries, ensuring the physical spacing $dx=0.0078125$ is applied.
+
+2. **Vortex Identification**: Calculate the Q-criterion $Q = 0.5(|\Omega|^2 - |S|^2)$. Apply a global threshold $Q > \mu_Q + 3\sigma_Q$ to identify candidate voxels. Use a connected-components labeling algorithm to isolate structures, enforcing a minimum volume constraint (e.g., 20 voxels) to filter out noise-induced artifacts.
+
+3. **Centroid Calculation**: For each identified vortex, compute the vorticity-weighted centroid $(x_c, y_c, z_c)$. If a vortex structure wraps across the periodic boundary, "unwrap" the cluster coordinates relative to its geometric center before calculating the weighted average to ensure the centroid remains physically representative.
+
+4. **Vortex Tracking**: Implement a greedy nearest-neighbor matching algorithm to link centroids across consecutive timesteps. Incorporate the minimum-image convention for distance calculations and enforce a maximum displacement constraint ($d_{max}$) to prevent linking unrelated vortices. Save the resulting centroid coordinates and trajectory IDs to a lightweight HDF5 or Parquet file after each snapshot to ensure data persistence and memory efficiency.
+
+5. **Trajectory Filtering and Unwrapping**: Load the saved centroid data. Filter out trajectories that persist for fewer than 10 consecutive timesteps. For each remaining trajectory, "unwrap" the cumulative displacement coordinates to account for periodic boundary crossings, ensuring the trajectory is continuous in the unwrapped coordinate space.
+
+6. **MSD Calculation**: Calculate the Mean Squared Displacement $\text{MSD}(\tau) = \langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle$ using an ensemble average over all available pairs at each lag $\tau$. Limit the maximum lag $\tau$ to approximately one-quarter of the total trajectory length to maintain statistical significance.
+
+7. **Statistical Modeling**: Compute step displacements $\Delta \mathbf{r}_i = \mathbf{r}_{i+1} - \mathbf{r}_i$ using the minimum-image convention. Fit the distribution of step sizes $|\Delta \mathbf{r}|$ to both Gaussian and Lévy stable distributions. Use the Kolmogorov-Smirnov (K-S) test to quantify the goodness-of-fit for both models and determine if the transport regime is Brownian or Lévy-flight superdiffusive.
+
+8. **Data Aggregation and Visualization**: Perform linear regression on the log-log MSD plots to extract the diffusion exponent $\alpha$. Compile all results (trajectories, $\alpha$ values, K-S statistics) into a final report. Generate 3D visualizations of representative vortex trajectories and summary plots of the MSD and step-size distributions.
+
+Feedback on previous research plan:
+The current analysis is technically sound, well-executed, and provides a clear, physically motivated conclusion that distinguishes between correlated random walks and Lévy flights. The rejection of the Lévy flight hypothesis is robustly supported by the high tail exponents and Gaussian step-size statistics.
+
+However, to elevate this from a descriptive study to a high-impact scientific contribution, the following gaps must be addressed:
+
+1. **Address the Forcing Correlation Time ($\tau_{corr}$):** The report correctly identifies that the observation window ($\Delta \tau_{max} = 0.49$) is significantly shorter than the forcing correlation time ($\tau_{corr} = 5.0$). This is the "smoking gun" for the observed superdiffusion. The current analysis lacks a direct calculation of the **Velocity Autocorrelation Function (VACF)**, $C_v(\tau) = \langle \mathbf{v}(t) \cdot \mathbf{v}(t+\tau) \rangle$. Calculating this for the vortex centroids would provide the missing link between the forcing physics and the observed MSD exponent $\alpha$. If $\alpha \approx 2 - \beta$ (where $\beta$ is the decay exponent of the VACF), you would have a closed-form physical explanation for the superdiffusion.
+
+2. **Vortex Life-Cycle Dynamics:** The current tracking relies on a greedy nearest-neighbor approach. While sufficient for a first pass, it ignores the physical reality of vortex merging and splitting. The report mentions "merge/split events" but does not quantify them. Future iterations should categorize trajectories into "stable," "merging," and "splitting" classes. Do merging vortices exhibit different diffusion exponents? This would reveal if the superdiffusion is purely advective or if it is modulated by vortex-vortex interactions.
+
+3. **Sensitivity to Thresholding:** The Q-criterion threshold ($Q > \mu_Q + 3\sigma_Q$) is standard but arbitrary. Given that the result (superdiffusion) is a central claim, you must demonstrate that $\alpha$ is not a function of the threshold. Perform a sensitivity analysis by varying the threshold (e.g., $2.5\sigma$ to $4\sigma$) and report the stability of $\alpha$. If $\alpha$ shifts significantly, the "vortex" definition is too sensitive to noise.
+
+4. **Missing Physical Context:** The analysis treats vortices as points. In 3D turbulence, vortices are filaments. The "vorticity-weighted centroid" is a good proxy, but the *orientation* of the vortex filament relative to the local velocity field is likely what drives the persistence. A brief analysis of the alignment between the vortex axis (eigenvector of the velocity gradient tensor) and the velocity vector would provide deeper insight into why these structures persist.
+
+**Actionable Recommendations for the next iteration:**
+- **Compute the VACF:** Directly correlate the vortex velocity autocorrelation with the MSD exponent to confirm the "persistent motion" hypothesis.
+- **Threshold Sensitivity:** Re-run the MSD calculation at two additional Q-thresholds to prove the robustness of $\alpha \approx 1.8$.
+- **Classify Trajectories:** Distinguish between "isolated" and "interacting" (merging/splitting) vortices to see if the superdiffusive regime is universal or dependent on vortex density.
+- **Avoid further "more data" requests:** The current 1001 snapshots are sufficient. Focus on extracting the physics from the existing trajectories rather than expanding the dataset or model complexity.
+
+
+Respond in this format:
+
+\\begin{METHODS}
+<METHODS>
+\\end{METHODS}
+
+In <METHODS> put the methods you have generated.
+
+###### PROMPT ENDS ########
+
+###### RESPONSE [model: gemini-3.1-flash-lite-preview] ########
+\begin{METHODS}
+1. **Data Acquisition and Pre-processing**: Download the 1001-snapshot dataset using 8 parallel threads. For each snapshot, load the velocity fields and apply a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical noise. Compute the velocity gradient tensor $\nabla \mathbf{v}$ using `np.gradient` with `np.pad(..., mode='wrap')` to handle periodic boundaries, ensuring the physical spacing $dx=0.0078125$ is applied.
+
+2. **Robust Vortex Identification and Sensitivity Analysis**: Implement the Q-criterion $Q = 0.5(|\Omega|^2 - |S|^2)$. To ensure the robustness of the diffusion exponent $\alpha$, perform the identification at three distinct thresholds: $Q > \mu_Q + 2.5\sigma_Q$, $Q > \mu_Q + 3.0\sigma_Q$, and $Q > \mu_Q + 4.0\sigma_Q$. For each threshold, use connected-components labeling with a minimum volume constraint (20 voxels) to isolate structures.
+
+3. **Centroid Tracking and Interaction Classification**: Use a greedy nearest-neighbor algorithm with the minimum-image convention to link centroids across time. During tracking, flag "interaction events": identify a merge if two or more centroids at $t$ map to a single centroid at $t+1$, and a split if one centroid at $t$ maps to multiple at $t+1$. Store these events as metadata for each trajectory to categorize them into "isolated" (no events) vs. "interacting" (merging/splitting) classes.
+
+4. **Vortex Filament Orientation Analysis**: For each identified vortex, compute the local velocity gradient tensor $\nabla \mathbf{v}$ at the centroid. Extract the principal eigenvector of the symmetric part of the tensor (the vortex axis). Calculate the alignment angle $\theta$ between the vortex axis and the local velocity vector $\mathbf{v}$ to determine if the orientation correlates with the persistence of the trajectory.
+
+5. **Trajectory Unwrapping and Filtering**: Filter out trajectories that persist for fewer than 10 consecutive timesteps. For the remaining trajectories, perform coordinate unwrapping to account for periodic boundary crossings, ensuring the trajectory is continuous in the unwrapped coordinate space.
+
+6. **MSD and VACF Calculation**: Calculate the Mean Squared Displacement $\text{MSD}(\tau) = \langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle$ for each threshold and interaction class. Simultaneously, compute the Velocity Autocorrelation Function (VACF) for the vortex centroids: $C_v(\tau) = \langle \mathbf{v}(t) \cdot \mathbf{v}(t+\tau) \rangle$. Use these to verify the relationship $\alpha \approx 2 - \beta$ (where $\beta$ is the VACF decay exponent).
+
+7. **Statistical Modeling and Goodness-of-Fit**: Compute step displacements $\Delta \mathbf{r}_i = \mathbf{r}_{i+1} - \mathbf{r}_i$ using the minimum-image convention. Fit the distribution of step sizes $|\Delta \mathbf{r}|$ to Gaussian and Lévy stable distributions. Apply the Kolmogorov-Smirnov (K-S) test to quantify the goodness-of-fit for each model and determine the statistical significance of the superdiffusive regime.
+
+8. **Data Aggregation and Synthesis**: Perform linear regression on log-log MSD plots to extract $\alpha$ for each threshold and interaction class. Compare these values to confirm the stability of the superdiffusive exponent. Compile the final report, integrating the VACF analysis, threshold sensitivity results, and the influence of vortex interactions on the diffusion regime.
+\end{METHODS}
+
+
+###### PROMPT BEGINS ########
+Human: You are provided with a data description, an idea, a research plan to carry out the idea, and some suggestions to improve the research plan.
+- Your tasks is to improve the current research plan taking into account the suggestions, if they make sense. 
+- Do not write code in the research plan. 
+- Another agent will take your report and will write code according to it. 
+- The research plan should include no more than 8 steps. Each of these steps can have several substeps.
+
+Data description:
+
+# NS Simulation Dataset — 3D Driven Turbulence (128³)
+
+## Overview
+
+This dataset contains 1001 snapshots from a 3D isothermal hydrodynamic driven turbulence simulation run with AthenaK. The simulation models subsonic turbulence driven on large scales in a periodic unit box. The data are stored as Legacy VTK binary files on the Hugging Face Hub at `pedrota2000/NS_simulation` (HF token: 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).
+
+**A 13-snapshot sample has been pre-downloaded** to `/home/node/work/projects/ns_turbulence_v1/data_sample/`, covering indices 18903, 18953, 19003, 19053, 19103, 19203, 19303, 19403, 19503, 19603, 19703, 19803, 19903.
+
+For full analysis, **all 1001 files must be downloaded** from Hugging Face using `huggingface_hub.hf_hub_download` with `repo_id="pedrota2000/NS_simulation"`, `repo_type="dataset"`, `token="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"`. Download to a local directory such as `/home/node/work/projects/ns_turbulence_v1/data/`. Files follow the naming pattern `Turb.hydro_w.NNNNN.vtk` where NNNNN ranges from 18903 to 19903. Each file is ~42 MB, total ~42 GB.
+
+## File Format and Reading
+
+Files are Legacy VTK binary (DATASET STRUCTURED_POINTS) and can be read with `pyvista`:
+
+```python
+import pyvista as pv
+mesh = pv.read("/home/node/work/projects/ns_turbulence_v1/data/Turb.hydro_w.18903.vtk")
+dens = mesh["dens"].reshape(128, 128, 128)
+velx = mesh["velx"].reshape(128, 128, 128)
+vely = mesh["vely"].reshape(128, 128, 128)
+velz = mesh["velz"].reshape(128, 128, 128)
+```
+
+## Grid Geometry
+
+- **Dimensions**: 128 × 128 × 128 cells (128³ = 2,097,152 cells per field)
+- **Domain**: [-0.5, 0.5]³ (unit box, periodic on all faces)
+- **Cell spacing**: dx = dy = dz = 1/128 ≈ 0.0078125
+- **Cell centres**: from -0.5 + dx/2 to 0.5 - dx/2 in each dimension
+
+## Data Fields (per file, cell-centred scalars)
+
+| Field | Shape (reshaped) | dtype | Physical range (observed) | Description |
+|-------|-----------------|-------|---------------------------|-------------|
+| `dens` | (128,128,128) | float32 | [0.985, 1.007] | Mass density ρ (near-unity; isothermal subsonic) |
+| `velx` | (128,128,128) | float32 | [-0.865, 0.691] | Velocity x-component v_x |
+| `vely` | (128,128,128) | float32 | [-0.687, 0.717] | Velocity y-component v_y |
+| `velz` | (128,128,128) | float32 | [-0.795, 0.853] | Velocity z-component v_z |
+| `s_00` | (128,128,128) | float32 | ≈ 0.047 (uniform) | Passive scalar tracer (uniform; not useful for dynamics) |
+
+## Temporal Structure
+
+- **Total snapshots**: 1001 (indices 18903–19903 inclusive)
+- **Simulation time**: t ≈ 189.03 to 199.03 (output cadence Δt = 0.01 per snapshot)
+- **Total time span**: Δt_total ≈ 10.0 simulation time units
+- **Snapshot index → simulation time**: t = index × 0.01
+
+## Simulation Parameters
+
+- Code: AthenaK
+- EOS: Isothermal, sound speed c_s = 5.0
+- Turbulence driving: solenoidal (divergence-free), dedt = 1×10⁻⁴, correlation time τ_corr = 5.0
+- Driving wavenumber: n_low=1, n_high=3 (peak at n=2 → large-scale forcing)
+- Time integrator: RK2, CFL = 0.3
+- Riemann solver: HLLE, reconstruction: PLM
+- Boundary conditions: periodic on all faces
+
+## Vorticity
+
+The 3D vorticity vector ω = ∇ × v has components:
+- ω_x = ∂v_z/∂y − ∂v_y/∂z
+- ω_y = ∂v_x/∂z − ∂v_z/∂x
+- ω_z = ∂v_y/∂x − ∂v_x/∂y
+
+Observed vorticity magnitude |ω|: mean ≈ 6.4, max ≈ 28.4 (at t=189.03).
+Vorticity is computed via finite differences (np.gradient) on the 128³ grid with spacing dx=0.0078125.
+
+## Research Objective
+
+**Primary task:** Identify vortices in the 3D turbulence simulation and track their centres of vorticity through time. For each identified vortex, compute how its centre position evolves as a function of simulation time. Then statistically characterise whether the vortex centre trajectories are consistent with:
+1. A **Gaussian random walk** (Brownian motion): step sizes drawn from a Gaussian distribution, MSD ∝ t (normal diffusion)
+2. A **Lévy flight**: step sizes drawn from a heavy-tailed (power-law) distribution, MSD ∝ t^α with α > 1 (superdiffusion)
+
+**Methodology hints:**
+- **Vortex detection**: Use the Q-criterion (Q = 0.5*(|Ω|² − |S|²) > threshold, where Ω is the antisymmetric part and S is the symmetric part of the velocity gradient tensor ∇v) or the λ₂ criterion. Label connected regions above threshold as individual vortex structures. Alternatively use vorticity magnitude thresholding (|ω| > threshold × mean(|ω|)).
+- **Centre of vorticity**: For each labelled vortex region, compute the vorticity-weighted centroid: x_c = Σ(|ω_i| * x_i) / Σ|ω_i| for x, y, z coordinates.
+- **Vortex tracking**: Match vortices across consecutive timesteps using nearest-neighbour matching on centroid positions (Hungarian algorithm or simple greedy nearest-neighbour). Handle vortex birth/death (merge/split events).
+- **Trajectory statistics**: For each tracked vortex trajectory of length N_t, compute step displacements Δr_i = r_{i+1} − r_i. Analyse the distribution of |Δr| — fit to Gaussian vs. Lévy (stable distribution or power-law tail). Compute MSD(τ) = <|r(t+τ) − r(t)|²> and fit the diffusion exponent α.
+- **Periodic boundaries**: The domain is periodic. Use minimum-image convention for displacement calculations: Δx = ((x2−x1+0.5) mod 1.0) − 0.5.
+
+## Storage and Memory Considerations
+
+- Each VTK file: ~42 MB on disk, ~40 MB in memory (5 fields × 128³ × 4 bytes)
+- All 1001 files: ~42 GB on disk — download to `/home/node/work/projects/ns_turbulence_v1/data/`
+- Process files sequentially (one at a time) to avoid memory exhaustion
+- For parallel downloading: use up to 8 threads
+- The pre-downloaded sample at `/home/node/work/projects/ns_turbulence_v1/data_sample/` can be used for algorithm development before running on the full dataset
+
+
+Idea:
+**Title**: Multiscale Statistical Mapping of Lagrangian Vortex Diffusion in 3D Isothermal Turbulence
+
+**Description**: This study quantifies vortex transport regimes by processing the 1001-snapshot AthenaK dataset through a robust, noise-mitigating pipeline. To ensure physical validity, velocity fields are pre-processed with a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical artifacts before computing the velocity gradient tensor $\nabla \mathbf{v}$ and the Q-criterion. Vortices are identified via an adaptive, local-thresholding scheme ($Q > \text{local\_mean}(Q) + 3\sigma_{\text{local}}$) to account for spatial intermittency, with only structures persisting for $\geq 10$ timesteps retained to filter transient noise. We track these persistent vorticity-weighted centroids using a greedy nearest-neighbor approach optimized for periodic boundaries via the minimum-image convention. Statistical characterization is performed by calculating the Mean Squared Displacement (MSD) $\langle |r(t+\tau) - r(t)|^2 \rangle \propto \tau^\alpha$ and fitting step-size distributions to Gaussian and Lévy stable models. The final analysis integrates 3D trajectory visualizations, log-log MSD plots, and Kolmogorov-Smirnov goodness-of-fit tests to isolate the diffusion exponent $\alpha$ and determine whether vortex trajectories exhibit Brownian motion or Lévy-flight superdiffusion within the resolved inertial range.
+
+Current research plan:
+1. **Data Acquisition and Pre-processing**: Download the 1001-snapshot dataset using 8 parallel threads. For each snapshot, load the velocity fields and apply a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical noise. Compute the velocity gradient tensor $\nabla \mathbf{v}$ using `np.gradient` with `np.pad(..., mode='wrap')` to handle periodic boundaries, ensuring the physical spacing $dx=0.0078125$ is applied.
+
+2. **Robust Vortex Identification and Sensitivity Analysis**: Implement the Q-criterion $Q = 0.5(|\Omega|^2 - |S|^2)$. To ensure the robustness of the diffusion exponent $\alpha$, perform the identification at three distinct thresholds: $Q > \mu_Q + 2.5\sigma_Q$, $Q > \mu_Q + 3.0\sigma_Q$, and $Q > \mu_Q + 4.0\sigma_Q$. For each threshold, use connected-components labeling with a minimum volume constraint (20 voxels) to isolate structures.
+
+3. **Centroid Tracking and Interaction Classification**: Use a greedy nearest-neighbor algorithm with the minimum-image convention to link centroids across time. During tracking, flag "interaction events": identify a merge if two or more centroids at $t$ map to a single centroid at $t+1$, and a split if one centroid at $t$ maps to multiple at $t+1$. Store these events as metadata for each trajectory to categorize them into "isolated" (no events) vs. "interacting" (merging/splitting) classes.
+
+4. **Vortex Filament Orientation Analysis**: For each identified vortex, compute the local velocity gradient tensor $\nabla \mathbf{v}$ at the centroid. Extract the principal eigenvector of the symmetric part of the tensor (the vortex axis). Calculate the alignment angle $\theta$ between the vortex axis and the local velocity vector $\mathbf{v}$ to determine if the orientation correlates with the persistence of the trajectory.
+
+5. **Trajectory Unwrapping and Filtering**: Filter out trajectories that persist for fewer than 10 consecutive timesteps. For the remaining trajectories, perform coordinate unwrapping to account for periodic boundary crossings, ensuring the trajectory is continuous in the unwrapped coordinate space.
+
+6. **MSD and VACF Calculation**: Calculate the Mean Squared Displacement $\text{MSD}(\tau) = \langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle$ for each threshold and interaction class. Simultaneously, compute the Velocity Autocorrelation Function (VACF) for the vortex centroids: $C_v(\tau) = \langle \mathbf{v}(t) \cdot \mathbf{v}(t+\tau) \rangle$. Use these to verify the relationship $\alpha \approx 2 - \beta$ (where $\beta$ is the VACF decay exponent).
+
+7. **Statistical Modeling and Goodness-of-Fit**: Compute step displacements $\Delta \mathbf{r}_i = \mathbf{r}_{i+1} - \mathbf{r}_i$ using the minimum-image convention. Fit the distribution of step sizes $|\Delta \mathbf{r}|$ to Gaussian and Lévy stable distributions. Apply the Kolmogorov-Smirnov (K-S) test to quantify the goodness-of-fit for each model and determine the statistical significance of the superdiffusive regime.
+
+8. **Data Aggregation and Synthesis**: Perform linear regression on log-log MSD plots to extract $\alpha$ for each threshold and interaction class. Compare these values to confirm the stability of the superdiffusive exponent. Compile the final report, integrating the VACF analysis, threshold sensitivity results, and the influence of vortex interactions on the diffusion regime.
+
+Suggestions:
+
+
+        Suggestion #1:
+        content='The updated research plan is comprehensive and effectively incorporates the feedback regarding VACF, threshold sensitivity, interaction classification, and filament orientation. I have only a few minor suggestions to ensure the implementation remains robust and efficient:\n\n1. **Refine the "Interaction" Logic**: In Step 3, ensure that the "merge/split" classification is strictly defined. A simple approach is to track the number of parent/child nodes in the tracking graph. If a node has >1 parent, it is a merge; if it has >1 child, it is a split. Ensure that the "isolated" class only includes trajectories that never participate in a merge or split event throughout their entire lifetime.\n\n2. **Memory Management for Tracking**: Since you are processing 1001 snapshots, storing all trajectories in memory simultaneously might be heavy. In Step 4, consider using a lightweight graph-based structure (e.g., `networkx` or a simple dictionary of lists) to store the tracking graph. This allows you to perform the "interaction" classification and "unwrapping" efficiently after the tracking pass is complete.\n\n3. **Normalization of VACF**: In Step 6, ensure the VACF is normalized by the initial variance, $C_v(\\tau) = \\langle \\mathbf{v}(t) \\cdot \\mathbf{v}(t+\\tau) \\rangle / \\langle |\\mathbf{v}(t)|^2 \\rangle$, so that $C_v(0) = 1$. This makes the decay exponent $\\beta$ easier to compare across different threshold classes.\n\n4. **Vortex Filament Orientation (Step 4)**: To make this computationally efficient, you do not need to compute the full eigendecomposition for every voxel. Since you only care about the orientation at the centroid, compute the velocity gradient tensor $\\nabla \\mathbf{v}$ only at the centroid coordinates identified in Step 2.\n\n5. **Threshold Sensitivity (Step 2)**: To avoid redundant computation, you can perform the connected-components labeling for the most restrictive threshold ($4.0\\sigma$) first, and then use those labels to check if they satisfy the lower thresholds ($3.0\\sigma$ and $2.5\\sigma$). This "nested" approach can save significant processing time.\n\nThe plan is otherwise excellent and ready for implementation.' additional_kwargs={} response_metadata={} id='c0916e8b-4edf-42ef-8f77-d65eeb72fe72'
+
+
+
+        Suggestion #2:
+        content='The updated research plan is comprehensive and effectively incorporates the feedback regarding VACF, threshold sensitivity, interaction classification, and filament orientation. I have only two minor suggestions to ensure the implementation remains robust:\n\n1. **Refine the "Interaction" Logic in Step 3**: The current plan mentions flagging merges/splits during the greedy nearest-neighbor tracking. To ensure this is computationally feasible and accurate, explicitly define the "interaction" criteria: a merge occurs if multiple centroids at $t$ are within a distance $d_{link}$ of a single centroid at $t+1$, and a split if one centroid at $t$ is within $d_{link}$ of multiple centroids at $t+1$. Defining a clear spatial radius $d_{link}$ (e.g., 2-3 grid cells) will prevent false positives caused by random proximity.\n\n2. **Clarify the "Unwrapping" in Step 5**: Since you are tracking centroids in a periodic box, ensure that the "unwrapping" logic is applied to the *trajectories* (the sequence of positions) rather than the *vortex clusters* themselves. The centroid coordinates should be stored as continuous, unwrapped values (e.g., $x > 0.5$ or $x < -0.5$) to allow for the calculation of the MSD without the periodic boundary "jump" artifacts.\n\nThe plan is otherwise excellent and ready for implementation.' additional_kwargs={} response_metadata={} id='fce50caa-88ac-4b61-98e7-290120bcfd52'
+
+
+
+        Suggestion #3:
+        content='The updated research plan is comprehensive and effectively incorporates the feedback regarding VACF, threshold sensitivity, interaction classification, and filament orientation. I have only two minor suggestions to further improve the robustness and efficiency of the implementation:\n\n1. **Refine the "Vortex Filament Orientation" (Step 4):** The plan suggests computing the alignment between the vortex axis and the local velocity vector. To make this more robust, ensure that the "vortex axis" is defined as the eigenvector corresponding to the largest eigenvalue of the symmetric part of the velocity gradient tensor ($S$), as this represents the principal strain direction, or the vorticity vector $\\omega$ itself, which is the standard definition of the vortex filament orientation. Using the vorticity vector $\\omega$ is generally more physically representative of the "vortex axis" in turbulence studies.\n\n2. **Memory Management for Tracking (Step 3):** Since you are processing 1001 snapshots, storing all trajectories in memory simultaneously might be risky depending on the number of vortices identified. I suggest implementing a "rolling" tracking buffer: keep only the centroids from $t$ and $t+1$ in memory to perform the matching, and append the results to a persistent storage format (like a Parquet file or a database) incrementally. This ensures the pipeline remains memory-efficient even if the number of detected vortices is high.\n\nThe plan is otherwise excellent and ready for execution.' additional_kwargs={} response_metadata={} id='4eb7b470-effb-470c-b608-801c858c4826'
+
+
+
+**Respond in this format**:
+
+\\begin{METHODS}
+<METHODS>
+\\end{METHODS}
+
+In <METHODS> put the new research methodology. Reply with the new research methodology, no preamble or comment at the very beginning (e.g. alright team...).
+
+###### PROMPT ENDS ########
+
+###### RESPONSE [model: gemini-3.1-flash-lite-preview] ########
+\begin{METHODS}
+1. **Data Acquisition and Pre-processing**: Download the 1001-snapshot dataset using 8 parallel threads. For each snapshot, load the velocity fields and apply a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical noise. Compute the velocity gradient tensor $\nabla \mathbf{v}$ using `np.gradient` with `np.pad(..., mode='wrap')` to handle periodic boundaries, ensuring the physical spacing $dx=0.0078125$ is applied.
+
+2. **Robust Vortex Identification**: Implement the Q-criterion $Q = 0.5(|\Omega|^2 - |S|^2)$. Use a nested thresholding approach: perform connected-components labeling for the most restrictive threshold ($Q > \mu_Q + 4.0\sigma_Q$) first, then verify if these structures satisfy the lower thresholds ($3.0\sigma$ and $2.5\sigma$). Apply a minimum volume constraint (20 voxels) to isolate persistent structures.
+
+3. **Centroid Tracking and Interaction Classification**: Perform greedy nearest-neighbor matching between $t$ and $t+1$ using a spatial radius $d_{link} = 3$ grid cells and the minimum-image convention. Use a rolling buffer to store only the current and previous snapshots in memory, appending results to a persistent file (e.g., Parquet). Define interactions: a merge occurs if multiple centroids at $t$ map to one at $t+1$; a split if one at $t$ maps to multiple at $t+1$. Classify trajectories as "isolated" (never interacting) or "interacting".
+
+4. **Vortex Filament Orientation**: For each identified vortex centroid, compute the vorticity vector $\boldsymbol{\omega} = \nabla \times \mathbf{v}$. Calculate the alignment angle $\theta$ between the local vorticity vector $\boldsymbol{\omega}$ and the local velocity vector $\mathbf{v}$ at the centroid to assess the physical orientation of the vortex filament.
+
+5. **Trajectory Unwrapping**: For all trajectories persisting $\geq 10$ timesteps, perform coordinate unwrapping on the sequence of centroid positions. Convert periodic coordinates into continuous, unwrapped values to eliminate "jump" artifacts, ensuring the trajectory is continuous for subsequent MSD calculations.
+
+6. **MSD and Normalized VACF Calculation**: Calculate the Mean Squared Displacement $\text{MSD}(\tau) = \langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle$ for each threshold and interaction class. Compute the normalized Velocity Autocorrelation Function $C_v(\tau) = \langle \mathbf{v}(t) \cdot \mathbf{v}(t+\tau) \rangle / \langle |\mathbf{v}(t)|^2 \rangle$. Use these to verify the relationship $\alpha \approx 2 - \beta$ (where $\beta$ is the VACF decay exponent).
+
+7. **Statistical Modeling and Goodness-of-Fit**: Compute step displacements $\Delta \mathbf{r}_i = \mathbf{r}_{i+1} - \mathbf{r}_i$ using the minimum-image convention. Fit the distribution of step sizes $|\Delta \mathbf{r}|$ to Gaussian and Lévy stable distributions. Apply the Kolmogorov-Smirnov (K-S) test to quantify the goodness-of-fit for each model and determine the statistical significance of the superdiffusive regime.
+
+8. **Data Aggregation and Synthesis**: Perform linear regression on log-log MSD plots to extract the diffusion exponent $\alpha$ for each threshold and interaction class. Compile the final report, integrating the VACF analysis, threshold sensitivity results, and the influence of vortex interactions on the diffusion regime to conclude whether the trajectories exhibit Brownian motion or Lévy-flight superdiffusion.
+\end{METHODS}
+

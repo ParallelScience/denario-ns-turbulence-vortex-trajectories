@@ -1,0 +1,15 @@
+1. **Data Acquisition and Pre-processing**: Download the 1001-snapshot dataset using 8 parallel threads. For each snapshot, load the velocity fields and apply a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical noise. Compute the velocity gradient tensor $\nabla \mathbf{v}$ using `np.gradient` with `np.pad(..., mode='wrap')` to correctly handle periodic boundaries, ensuring the physical spacing $dx=0.0078125$ is applied.
+
+2. **Vortex Identification**: Calculate the Q-criterion $Q = 0.5(|\Omega|^2 - |S|^2)$. Apply a global threshold $Q > \mu_Q + 3\sigma_Q$ to identify candidate voxels. Use a connected-components labeling algorithm to isolate structures, enforcing a minimum volume constraint (e.g., 20 voxels) to filter out noise-induced artifacts.
+
+3. **Centroid Calculation**: For each identified vortex, compute the vorticity-weighted centroid $(x_c, y_c, z_c)$. If a vortex structure wraps across the periodic boundary, "unwrap" the cluster coordinates relative to its geometric center before calculating the weighted average to ensure the centroid remains physically representative.
+
+4. **Vortex Tracking**: Implement a greedy nearest-neighbor matching algorithm to link centroids across consecutive timesteps. Incorporate the minimum-image convention for distance calculations and enforce a maximum displacement constraint ($d_{max}$) to prevent linking unrelated vortices. Save the resulting centroid coordinates and trajectory IDs to a lightweight HDF5 or Parquet file after each snapshot to ensure data persistence and memory efficiency.
+
+5. **Trajectory Filtering and Unwrapping**: Load the saved centroid data. Filter out trajectories that persist for fewer than 10 consecutive timesteps. For each remaining trajectory, "unwrap" the cumulative displacement coordinates to account for periodic boundary crossings, ensuring the trajectory is continuous in the unwrapped coordinate space.
+
+6. **MSD Calculation**: Calculate the Mean Squared Displacement $\text{MSD}(\tau) = \langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle$ using an ensemble average over all available pairs at each lag $\tau$. Limit the maximum lag $\tau$ to approximately one-quarter of the total trajectory length to maintain statistical significance.
+
+7. **Statistical Modeling**: Compute step displacements $\Delta \mathbf{r}_i = \mathbf{r}_{i+1} - \mathbf{r}_i$ using the minimum-image convention. Fit the distribution of step sizes $|\Delta \mathbf{r}|$ to both Gaussian and Lévy stable distributions. Use the Kolmogorov-Smirnov (K-S) test to quantify the goodness-of-fit for both models and determine if the transport regime is Brownian or Lévy-flight superdiffusive.
+
+8. **Data Aggregation and Visualization**: Perform linear regression on the log-log MSD plots to extract the diffusion exponent $\alpha$. Compile all results (trajectories, $\alpha$ values, K-S statistics) into a final report. Generate 3D visualizations of representative vortex trajectories and summary plots of the MSD and step-size distributions.
