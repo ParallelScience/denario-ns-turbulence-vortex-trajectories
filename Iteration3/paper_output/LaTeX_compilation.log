@@ -1,0 +1,278 @@
+
+==== ERROR on iteration Pass 1 ====
+---- STDOUT ----
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex)
+ restricted \write18 enabled.
+entering extended mode
+(./paper_v3_citations.tex
+LaTeX2e <2022-11-01> patch level 1
+L3 programming layer <2023-01-16>
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2022/07/02 v1.4n Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/natbib/natbib.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/xetex.def)))
+(/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-xetex.def)
+No file paper_v3_citations.aux.
+(/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd)
+
+Package natbib Warning: Citation `maiti2025vorticitypackingeffectslong' on page
+ 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `leoncini2002jetsstickinessanomaloustransport'
+ on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `maiti2025vorticitypackingeffectslong' on page
+ 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `kumar2025trappingtransportinertialparticles' 
+on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `aulnette2025transportsphericalmicroparticles3
+d' on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `kumar2025trappingtransportinertialparticles' 
+on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `kumar2025trappingtransportinertialparticles' 
+on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `aulnette2025transportsphericalmicroparticles3
+d' on page 1 undefined on input line 32.
+
+[1] [2]
+
+Package natbib Warning: Citation `menon2021significancestraindominatedregionvor
+tex' on page 3 undefined on input line 36.
+
+
+Overfull \hbox (1.31001pt too wide) in paragraph at lines 36--36
+\TU/lmr/m/n/10 Coherent vortex structures were identified in each snapshot usin
+g the Q-criterion,
+
+Package natbib Warning: Citation `kashyap2026emergencelocalorderinggiant' on pa
+ge 3 undefined on input line 36.
+
+
+Package natbib Warning: Citation `bailey2022logitfitactive' on page 3 undefined
+ on input line 36.
+
+
+./paper_v3_citations.tex:36: LaTeX Error: Command \bfseries invalid in math mod
+e.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.36 ...\citep{katayama2025notetwopointmeansquare}
+                                                  \end{equation}where $\math...
+
+
+Package natbib Warning: Citation `katayama2025notetwopointmeansquare' on page 3
+ undefined on input line 36.
+
+
+Package natbib Warning: Citation `mcclure2026collectivevortexdynamicsisolated' 
+on page 3 undefined on input line 36.
+
+
+Package natbib Warning: Citation `bradley2025velocitycorrelationsvorticesrarefa
+ction' on page 3 undefined on input line 36.
+
+
+Package natbib Warning: Citation `ashraf2025experimentalinvestigationwaterexit'
+ on page 3 undefined on input line 36.
+
+[3]
+
+Package natbib Warning: Citation `zhang2019imaginganisotropicvortexdynamics' on
+ page 4 undefined on input line 36.
+
+[4]
+Overfull \hbox (12.09203pt too wide) in paragraph at lines 51--52
+\TU/lmr/m/n/10 While all components exhibit strong superdiffusion, there is a n
+oticeable anisotropy,
+
+Overfull \hbox (34.54802pt too wide) in paragraph at lines 58--58
+[]\TU/lmr/bx/n/12 Coupling with the background flow and transport anisotropy 
+
+LaTeX Warning: Reference `tab:vel_corr' on page 5 undefined on input line 59.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[5] [6] [7]
+No file paper_v3_citations.bbl.
+
+Package natbib Warning: There were undefined citations.
+
+[8] (./paper_v3_citations.aux)
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ )
+(see the transcript file for additional information)
+Output written on paper_v3_citations.pdf (8 pages).
+Transcript written on paper_v3_citations.log.
+---- STDERR ----
+
+==== ERROR on iteration Final Pass 1 ====
+---- STDOUT ----
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex)
+ restricted \write18 enabled.
+entering extended mode
+(./paper_v3_citations.tex
+LaTeX2e <2022-11-01> patch level 1
+L3 programming layer <2023-01-16>
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2022/07/02 v1.4n Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/natbib/natbib.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/xetex.def)))
+(/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-xetex.def)
+(./paper_v3_citations.aux)
+(/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd)
+
+Package natbib Warning: Citation `maiti2025vorticitypackingeffectslong' on page
+ 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `leoncini2002jetsstickinessanomaloustransport'
+ on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `maiti2025vorticitypackingeffectslong' on page
+ 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `kumar2025trappingtransportinertialparticles' 
+on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `aulnette2025transportsphericalmicroparticles3
+d' on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `kumar2025trappingtransportinertialparticles' 
+on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `kumar2025trappingtransportinertialparticles' 
+on page 1 undefined on input line 32.
+
+
+Package natbib Warning: Citation `aulnette2025transportsphericalmicroparticles3
+d' on page 1 undefined on input line 32.
+
+[1] [2]
+
+Package natbib Warning: Citation `menon2021significancestraindominatedregionvor
+tex' on page 3 undefined on input line 36.
+
+
+Overfull \hbox (1.31001pt too wide) in paragraph at lines 36--36
+\TU/lmr/m/n/10 Coherent vortex structures were identified in each snapshot usin
+g the Q-criterion,
+
+Package natbib Warning: Citation `kashyap2026emergencelocalorderinggiant' on pa
+ge 3 undefined on input line 36.
+
+
+Package natbib Warning: Citation `bailey2022logitfitactive' on page 3 undefined
+ on input line 36.
+
+
+./paper_v3_citations.tex:36: LaTeX Error: Command \bfseries invalid in math mod
+e.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.36 ...\citep{katayama2025notetwopointmeansquare}
+                                                  \end{equation}where $\math...
+
+
+Package natbib Warning: Citation `katayama2025notetwopointmeansquare' on page 3
+ undefined on input line 36.
+
+
+Package natbib Warning: Citation `mcclure2026collectivevortexdynamicsisolated' 
+on page 3 undefined on input line 36.
+
+
+Package natbib Warning: Citation `bradley2025velocitycorrelationsvorticesrarefa
+ction' on page 3 undefined on input line 36.
+
+
+Package natbib Warning: Citation `ashraf2025experimentalinvestigationwaterexit'
+ on page 3 undefined on input line 36.
+
+[3]
+
+Package natbib Warning: Citation `zhang2019imaginganisotropicvortexdynamics' on
+ page 4 undefined on input line 36.
+
+[4]
+Overfull \hbox (12.09203pt too wide) in paragraph at lines 51--52
+\TU/lmr/m/n/10 While all components exhibit strong superdiffusion, there is a n
+oticeable anisotropy,
+
+Overfull \hbox (34.54802pt too wide) in paragraph at lines 58--58
+[]\TU/lmr/bx/n/12 Coupling with the background flow and transport anisotropy 
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[5] [6] [7] (./paper_v3_citations.bbl [8])
+
+Package natbib Warning: There were undefined citations.
+
+[9] (./paper_v3_citations.aux
+
+Package natbib Warning: Citation(s) may have changed.
+(natbib)                Rerun to get citations correct.
+
+) )
+(see the transcript file for additional information)
+Output written on paper_v3_citations.pdf (9 pages).
+Transcript written on paper_v3_citations.log.
+---- STDERR ----

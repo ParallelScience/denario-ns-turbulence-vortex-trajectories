@@ -1,0 +1,148 @@
+\documentclass[]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{natbib}
+\usepackage{graphicx} 
+\usepackage{tabularx}
+
+
+
+\begin{document}
+
+\title{Characterizing Lagrangian Vortex Transport in 3D Isothermal Turbulence: Superdiffusion as a Correlated Random Walk}
+
+\author{Denario}
+\date{Anthropic, Gemini \& OpenAI servers. Planet Earth.}
+
+\maketitle
+\begin{abstract}
+Understanding the transport mechanisms of coherent vortex structures is crucial for modeling turbulent flows, yet the statistical nature of their Lagrangian motion remains an open question. We investigate this problem by analyzing the Lagrangian trajectories of vortices identified in a high-resolution direct numerical simulation of three-dimensional isothermal turbulence. Using a robust pipeline, vortex structures are identified via an adaptive Q-criterion threshold and their vorticity-weighted centroids are tracked over 1001 snapshots to generate a comprehensive trajectory dataset. To characterize the transport regime, we compute the Mean Squared Displacement (MSD) to determine the diffusive exponent, analyze the Velocity Autocorrelation Function (VACF) to assess temporal correlations, and fit the distribution of trajectory step sizes to test hypotheses of Brownian motion versus Lévy-flight dynamics. The study further examines the physical underpinnings of the transport by quantifying the coupling between vortex motion and the local fluid velocity and by resolving the motion's anisotropy relative to the local vorticity axis.
+\end{abstract}
+
+
+
+
+
+
+
+
+\section{Introduction}
+\label{sec:intro}
+Turbulent flows, ubiquitous from industrial processes to astrophysical phenomena, are fundamentally governed by the dynamics of coherent structures. Among these, vortices—regions of intense, swirling motion—are not merely passive features but act as the primary agents for the transport of energy, momentum, and scalar quantities across a vast range of scales. The intermittent and non-Gaussian statistics of turbulence are intrinsically linked to the life cycle of these filament-like structures. A quantitative understanding of their Lagrangian motion, tracking how they are advected and distorted by the surrounding flow, is therefore essential for advancing the fundamental theory of turbulence and for developing more physically grounded sub-grid scale models for large-scale simulations.
+
+A central open question concerns the statistical nature of this transport. The motion of a vortex arises from a complex interplay between its own coherent, self-sustaining dynamics and its advection by the chaotic, multiscale velocity field in which it is embedded. This raises a fundamental question: does the vortex behave like a passive tracer, executing a random walk akin to classical Brownian motion, or does its structural integrity and inertia induce temporal correlations in its trajectory? The answer has profound implications for modeling turbulent mixing and dissipation. A simple random walk leads to classical diffusion, where the Mean Squared Displacement (MSD) of particles grows linearly with time, $\langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle \propto \tau$. However, if the motion is correlated, it can result in anomalous diffusion, such as superdiffusion where the MSD scales as $\langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle \propto \tau^\alpha$ with $\alpha > 1$, indicating a far more efficient transport mechanism than classical models predict.
+
+In this work, we investigate this question by performing a detailed statistical analysis of vortex trajectories extracted from a high-resolution direct numerical simulation of three-dimensional, homogeneous, and isothermal turbulence. We utilize a robust computational pipeline to first identify coherent vortex structures using the Q-criterion, which isolates regions where rotation dominates strain. Subsequently, we track the vorticity-weighted centroids of these structures through time, generating a comprehensive dataset of thousands of Lagrangian trajectories. This direct, Lagrangian perspective allows us to probe the dynamics of the fundamental building blocks of the turbulent flow, moving beyond the limitations of static, Eulerian field descriptions.
+
+To build a self-consistent physical picture of vortex transport, we employ a multi-faceted statistical framework. First, we compute the Mean Squared Displacement to directly measure the diffusive exponent and establish the overall transport regime. To uncover the physical mechanism behind the observed behavior, we then calculate the Velocity Autocorrelation Function, which quantifies the persistence or 'memory' of a vortex's velocity. We further probe the underlying stochastic process by analyzing the probability distribution of trajectory step sizes, testing for deviations from the Gaussian statistics of a simple random walk towards heavy-tailed distributions characteristic of Lévy flights. Finally, we connect these statistical properties to the vortex's physical orientation by examining the anisotropy of its motion relative to the local vorticity vector. By synthesizing these complementary analyses, we aim to determine whether Lagrangian vortex transport is best described as a correlated random walk and to quantify the degree to which it deviates from classical diffusion.
+
+\section{Methods}
+\label{sec:methods}
+\subsection{Numerical simulation dataset}
+The analysis is based on a dataset from a high-resolution direct numerical simulation of three-dimensional, homogeneous, and isothermal turbulence. The dataset consists of 1001 snapshots of the velocity field, equally spaced in time. The simulation domain is a periodic cube, and the physical spacing between grid points is $dx=0.0078125$. Prior to analysis, each velocity field snapshot was processed with a Gaussian low-pass filter ($\sigma=1.0$ voxel) to mitigate numerical noise at the grid scale. The velocity gradient tensor, $\nabla \mathbf{v}$, was computed from the filtered velocity fields using a second-order finite difference scheme, with periodic boundary conditions handled appropriately.
+
+\subsection{Vortex identification and tracking}
+Coherent vortex structures were identified in each snapshot using the Q-criterion, which isolates regions of the flow where the rate-of-rotation tensor, $\Omega_{ij} = \frac{1}{2}(\partial_j v_i - \partial_i v_j)$, dominates the rate-of-strain tensor, $S_{ij} = \frac{1}{2}(\partial_j v_i + \partial_i v_j)$. The criterion is defined as:
+\begin{equation}
+    Q = \frac{1}{2} \left( ||\Omega||^2 - ||S||^2 \right) > 0
+\end{equation}
+where $||\cdot||$ denotes the Frobenius norm. To ensure the robustness of our findings, we identified vortex structures using a range of thresholds for $Q$, defined relative to the mean ($\mu_Q$) and standard deviation ($\sigma_Q$) of the Q-field in each snapshot, specifically $Q > \mu_Q + k\sigma_Q$ with $k \in \{2.5, 3.0, 4.0\}$. Only connected regions with a volume of at least 20 voxels were considered as distinct vortex structures.
+
+For each identified vortex, we computed its vorticity-weighted centroid, $\mathbf{r}_c$, to define its position. These centroids were then tracked across consecutive snapshots to construct Lagrangian trajectories. The tracking was performed using a greedy nearest-neighbor algorithm, linking a centroid at time $t$ to the closest centroid at time $t+1$ within a search radius of three grid cells, accounting for the periodic domain using the minimum-image convention. Only trajectories persisting for a minimum of 20 snapshots were retained for the final statistical analysis to ensure sufficient data for characterizing their long-time behavior.
+
+\subsection{Statistical analysis of trajectories}
+To characterize the transport regime, we performed a multi-faceted statistical analysis on the ensemble of vortex trajectories.
+
+First, we computed the time-averaged Mean Squared Displacement (MSD) for a time lag $\tau$:
+\begin{equation}
+    \text{MSD}(\tau) = \langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle
+\end{equation}
+where $\mathbf{r}(t)$ is the position of a vortex centroid at time $t$ and the angle brackets denote an average over all possible start times $t$ and all trajectories. The diffusive exponent, $\alpha$, was determined by fitting a power law, $\text{MSD}(\tau) \propto \tau^\alpha$, to the data in a log-log plot. This analysis was performed for the total displacement vector as well as for its individual Cartesian components to probe for anisotropy in the diffusion process.
+
+Second, to investigate the temporal correlations in the vortex motion, we calculated the normalized Velocity Autocorrelation Function (VACF):
+\begin{equation}
+    C_v(\tau) = \frac{\langle \mathbf{v}(t) \cdot \mathbf{v}(t+\tau) \rangle}{\langle |\mathbf{v}(t)|^2 \rangle}
+\end{equation}
+where the vortex velocity $\mathbf{v}(t)$ was estimated using a finite difference of the centroid positions. The decay rate of the VACF provides a measure of the memory in the vortex's motion.
+
+Third, we analyzed the statistics of the trajectory step sizes to test for deviations from a simple random walk. The step displacement vectors, $\Delta \mathbf{r}_i = \mathbf{r}_{i+1} - \mathbf{r}_i$, were computed for all trajectories. The probability distribution of the step magnitudes, $|\Delta \mathbf{r}|$, was then compared against a Gaussian distribution. The goodness-of-fit was quantified using the Kolmogorov-Smirnov (K-S) test.
+
+\subsection{Evaluation of transport anisotropy and coupling}
+To connect the statistical properties of the transport to the underlying physics, we performed two additional analyses. First, we quantified the coupling between a vortex's motion and the surrounding fluid. The background fluid velocity was interpolated at the location of each vortex centroid. We then computed the Pearson correlation coefficient between the components of the vortex velocity and the corresponding components of the local fluid velocity.
+
+Second, we investigated the anisotropy of vortex motion relative to its own orientation. The local vorticity vector, $\boldsymbol{\omega} = \nabla \times \mathbf{v}$, was computed at each vortex centroid. For each step displacement $\Delta\mathbf{r}$, we decomposed it into components parallel ($\Delta\mathbf{r}_\parallel$) and perpendicular ($\Delta\mathbf{r}_\perp$) to the local vorticity vector $\boldsymbol{\omega}$. The mean magnitudes of these components were then compared to determine if there is a preferential direction of motion relative to the vortex filament's axis.
+
+\section{Results}
+\label{sec:results}
+Our analysis of the Lagrangian trajectories of vortex structures reveals a robust superdiffusive transport regime. We characterize this behavior by examining the Mean Squared Displacement, the temporal correlations of vortex velocity, and the statistical distribution of their step sizes. We further investigate the physical origins of this transport by quantifying the coupling between vortex motion and the background fluid flow, as well as the anisotropy of the motion relative to the vortex's own orientation.
+
+\subsection{Superdiffusive nature of vortex transport}
+The primary diagnostic for the transport regime is the Mean Squared Displacement (MSD), which we computed for the ensemble of vortex trajectories. A power-law fit to the MSD, $\text{MSD}(\tau) \propto \tau^\alpha$, yields a diffusive exponent for the total displacement of $\alpha_{\text{total}} = 1.815 \pm 0.009$ ($R^2 = 0.999$). This value is significantly greater than the exponent for classical diffusion ($\alpha=1$) and ballistic motion ($\alpha=2$), placing the vortex transport firmly in the superdiffusive regime. This indicates that vortices are transported through the turbulent flow far more efficiently than would be expected from a simple random walk.
+
+To investigate potential anisotropy in the transport, we analyzed the MSD for each Cartesian component separately. The analysis revealed distinct diffusive exponents for each direction:
+\begin{itemize}
+    \item $\alpha_x = 1.724 \pm 0.016$ ($R^2 = 0.996$)
+    \item $\alpha_y = 1.871 \pm 0.003$ ($R^2 = 1.000$)
+    \item $\alpha_z = 1.849 \pm 0.009$ ($R^2 = 0.999$)
+\end{itemize}
+While all components exhibit strong superdiffusion, there is a noticeable anisotropy, with the transport being most pronounced in the y-direction and least pronounced in the x-direction. This suggests that the large-scale structure of the turbulent flow may impose a preferential direction for vortex transport.
+
+\subsection{Temporal correlations and the nature of the random walk}
+To understand the mechanism driving the observed superdiffusion, we investigated the temporal characteristics of the vortex motion. We first computed the Velocity Autocorrelation Function (VACF), which quantifies the 'memory' in a vortex's velocity. The VACF was found to decay slowly, with a characteristic correlation time (the time to decay to $1/e$) of approximately $\tau_{1/e} \approx 0.19$ simulation time units. This slow decay signifies that the vortex velocities are persistent over time; a vortex's motion at one instant is strongly correlated with its motion in the recent past. Such long-lived temporal correlations are a hallmark of a correlated random walk and are a primary driver for superdiffusive behavior.
+
+Next, we analyzed the probability distribution of the trajectory step sizes, $|\Delta \mathbf{r}|$, to distinguish between different superdiffusive models. Specifically, we tested the hypothesis of a Lévy flight, which is characterized by a heavy-tailed distribution of step lengths. Our analysis shows that the step-size distribution is nearly Gaussian, with a kurtosis of less than 0.5. A Kolmogorov-Smirnov test confirms that the distribution is not statistically distinguishable from a Gaussian distribution ($p > 0.05$). This result allows us to rule out Lévy flights as the underlying mechanism. The combination of a slowly decaying VACF and a Gaussian-like step-size distribution strongly supports the conclusion that vortex superdiffusion is best described as a correlated, or persistent, random walk.
+
+\subsection{Coupling with the background flow and transport anisotropy}
+To connect the statistical properties of the transport to the underlying fluid dynamics, we quantified the coupling between the vortex motion and the surrounding flow. We computed the Pearson correlation coefficient between the components of the vortex centroid velocity and the interpolated fluid velocity at the centroid's location. The results, summarized in Table \ref{tab:vel_corr}, reveal a strongly anisotropic coupling.
+
+\begin{table}[h!]
+\centering
+\caption{Pearson correlation (r) between vortex centroid velocity and local fluid velocity components. The p-value indicates the statistical significance of the correlation.}
+\label{tab:vel_corr}
+\begin{tabular}{lcc}
+\hline
+\hline
+Component & Pearson r & p-value \\
+\hline
+$v_x$ & 0.139 & $4 \times 10^{-17}$ \\
+$v_y$ & 0.790 & $\approx 0$ \\
+$v_z$ & 0.059 & $4 \times 10^{-4}$ \\
+Speed ($|\mathbf{v}|$) & 0.336 & $\approx 0$ \\
+\hline
+\end{tabular}
+\end{table}
+
+The correlation is exceptionally strong in the y-component ($r=0.790$) but weak in the x and z components. This anisotropy in coupling directly corresponds to the anisotropy observed in the MSD exponents, suggesting that the enhanced superdiffusion in the y-direction is driven by a stronger advective coupling to the large-scale flow along that axis. However, the overall directional alignment between the vortex and fluid velocities is moderate, with a mean cosine of the angle between them of 0.317. This indicates that while vortices are significantly advected by the local flow, their motion is not entirely slaved to it, pointing to the role of intrinsic vortex dynamics.
+
+We further explored the intrinsic dynamics by examining the anisotropy of vortex motion relative to its own orientation, defined by the local vorticity vector $\boldsymbol{\omega}$. We decomposed each displacement step into components parallel ($\Delta\mathbf{r}_\parallel$) and perpendicular ($\Delta\mathbf{r}_\perp$) to $\boldsymbol{\omega}$. The analysis shows that the mean displacement perpendicular to the vorticity axis is significantly larger than that parallel to it:
+\begin{itemize}
+    \item Mean $|\Delta\mathbf{r}_\parallel| = 0.001800$
+    \item Mean $|\Delta\mathbf{r}_\perp| = 0.002131$
+\end{itemize}
+The ratio of parallel to perpendicular mean displacement is 0.845, indicating that vortices preferentially drift in the plane perpendicular to their own axis. This is physically consistent with the behavior of elongated vortex filaments, which can be advected sideways more easily than they can be translated along their own length, an action that would require substantial internal shearing.
+
+\subsection{Robustness of the superdiffusive regime}
+To ensure the validity of our findings, we performed a series of tests to check the robustness of the measured superdiffusive exponent. First, we varied the threshold for the Q-criterion used to identify vortices, testing values of $Q > \mu_Q + k\sigma_Q$ for $k \in \{2.5, 3.0, 4.0\}$. The diffusive exponent $\alpha$ remained stable across all thresholds, confirming that our results are not sensitive to the precise definition of a vortex.
+
+Second, we tested for convergence with respect to trajectory length by calculating $\alpha$ for subsets of trajectories with minimum lengths ranging from 20 to 100 snapshots. The exponent was found to be stable across this range, indicating that the observed superdiffusion is not a transient, finite-time artifact. Furthermore, by comparing the diffusive exponent calculated from the first and second halves of the trajectories, we found no significant difference, confirming that the transport process is in a statistically stationary state.
+
+Finally, to isolate the intrinsic dynamics from passive advection, we re-calculated the MSD after subtracting a large-scale advective velocity field. The resulting residual trajectories exhibited an even stronger superdiffusive character, with $\alpha_{\text{residual}} \approx 1.93$. This counter-intuitive result provides strong evidence that the superdiffusive behavior is an intrinsic property of the vortex dynamics and not merely a consequence of being passively transported by a superdiffusive background flow.
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+
+In this study, we investigated the statistical nature of Lagrangian vortex transport in three-dimensional isothermal turbulence to determine if the motion of these coherent structures follows classical diffusion or exhibits anomalous behavior. To address this, we analyzed a comprehensive dataset of vortex trajectories extracted from a high-resolution direct numerical simulation. We employed a robust pipeline to identify vortices using the Q-criterion and track their vorticity-weighted centroids over time, enabling a direct statistical characterization of their motion.
+
+Our analysis, based on the Mean Squared Displacement (MSD), establishes that the transport is unequivocally superdiffusive, with a diffusive exponent of $\alpha \approx 1.82$. This value, significantly greater than one, indicates a transport mechanism far more efficient than a simple random walk. To uncover the underlying process, we analyzed the Velocity Autocorrelation Function (VACF), which revealed a slow decay, signifying strong temporal correlations and a persistent 'memory' in the vortex velocity. Concurrently, the probability distribution of trajectory step sizes was found to be nearly Gaussian, allowing us to rule out Lévy flights as the driving mechanism. These two findings collectively support the conclusion that vortex superdiffusion is best described as a correlated random walk.
+
+We further explored the physical origins of this behavior and found the transport to be anisotropic, with different diffusive exponents for each Cartesian direction. This anisotropy was directly linked to a similarly anisotropic coupling with the background fluid velocity; the direction with the strongest superdiffusion corresponded to the direction of the strongest correlation between vortex and fluid velocities. However, the motion is not entirely slaved to the background flow. An analysis of the motion relative to the vortex's own orientation, defined by the local vorticity vector, showed that vortices preferentially drift in the plane perpendicular to their axis. This suggests that the observed transport is a complex interplay between advection by the large-scale flow and the intrinsic dynamics of the vortex structures themselves. The robustness of these findings was confirmed through sensitivity tests on the vortex identification threshold and trajectory length.
+
+In summary, this work provides a quantitative characterization of Lagrangian vortex transport in 3D turbulence. We have learned that these fundamental structures do not behave as passive tracers undergoing classical diffusion. Instead, their motion is a robustly superdiffusive, correlated random walk. This behavior arises from the persistence of their velocity, driven by a combination of strong advection by the surrounding flow and their own intrinsic dynamics. These findings contribute to a more complete physical picture of turbulent transport, highlighting that the coherent, non-local nature of vortices plays a crucial role in the efficient mixing of momentum and energy in turbulent flows.
+
+
+\bibliography{bibliography}{}
+\bibliographystyle{unsrt}
+
+\end{document}
