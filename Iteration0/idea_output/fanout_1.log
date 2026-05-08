@@ -115,38 +115,42 @@ Vorticity is computed via finite differences (np.gradient) on the 128³ grid wit
 
 
 Proposed ideas:
-1. **Title: Topological Persistence of Vortex Filaments**
-   Research Objective: Quantify the lifetime and morphological stability of vortex filaments using persistent homology. By tracking the birth and death of topological features in the vorticity field, determine if long-lived filaments represent coherent "backbones" of the turbulent cascade or transient stochastic fluctuations.
+1. **Title: Topological Classification of Vortex Lifetimes and Diffusion**
+   This study investigates whether the topological longevity of a vortex—how long it persists before merging or dissipating—correlates with its diffusion regime. By categorizing vortex trajectories based on their temporal lifespan, we can determine if short-lived, transient structures exhibit different scaling exponents (α) compared to long-lived, stable vortex filaments.
 
-2. **Title: Energy Transfer Anisotropy in Subsonic Forcing**
-   Research Objective: Analyze the non-linear energy transfer terms between velocity components as a function of local density gradients. This study aims to determine if the solenoidal driving creates a preferential spatial orientation for kinetic energy dissipation in the isothermal regime.
+2. **Title: Anisotropy in Vortex Transport under Large-Scale Forcing**
+   Given the solenoidal driving at low wavenumbers, this research examines if vortex diffusion is isotropic or biased by the driving geometry. The objective is to compute directional MSD components to test if vortex trajectories show preferred migration axes relative to the forcing fields.
 
-3. **Title: Multi-Scale Correlation of Density and Vorticity**
-   Research Objective: Investigate the spatial coupling between density fluctuations and local vorticity magnitude across different scales. The goal is to determine if mass density "clumping" acts as a dynamical barrier to the intensification of small-scale vortex structures.
+3. **Title: Vortex Interaction Dynamics: Merging vs. Superdiffusive Jumps**
+   This project aims to isolate the impact of vortex-vortex interactions on trajectory statistics. By distinguishing between "isolated" vortex motion and "interacting" (merging/splitting) events, we can quantify how much of the observed Lévy-flight behavior is driven by discrete collision events versus background turbulent advection.
 
-4. **Title: Helicity Flux and Mirror Symmetry Breaking**
-   Research Objective: Calculate the local and global helicity density over the 1001-snapshot time series. This research aims to assess whether the solenoidal forcing induces spontaneous parity-breaking in the velocity field, leading to sustained localized helical structures.
+4. **Title: Threshold Sensitivity in Vortex Diffusion Characterization**
+   This research assesses the robustness of diffusion exponents (α) across varying Q-criterion and vorticity magnitude thresholds. The goal is to determine if the transition from Gaussian to Lévy-like statistics is a physical property of the turbulence or an artifact of the spatial filtering process used for vortex identification.
 
-5. **Title: Spectral Energy Bottlenecks at the Forcing Scale**
-   Research Objective: Examine the energy spectrum near the injection scale (n=2) to identify potential "bottleneck" effects where energy accumulates before cascading to smaller scales. This will evaluate how the specific correlation time of the driving force influences the spectral slope in the inertial range.
+5. **Title: Lagrangian Coherent Structures (LCS) vs. Vortex Centroid Tracking**
+   This idea compares the trajectories of vorticity-weighted centroids against the underlying flow structure identified by LCS. By mapping vortex paths onto the skeleton of the turbulence, we determine if vortices act as passive tracers of the flow or if they actively migrate across hyperbolic manifolds in the 3D domain.
 
-6. **Title: Lagrangian Coherent Structures (LCS) and Transport Barriers**
-   Research Objective: Identify Lagrangian Coherent Structures by analyzing the Finite-Time Lyapunov Exponent (FTLE) fields derived from the velocity data. The research objective is to map these "hidden" manifolds to determine if they act as absolute boundaries for fluid transport in the periodic box.
+6. **Title: Scaling of Vortex Displacement Distributions in Isothermal Turbulence**
+   Focusing on the heavy tails of step-size distributions, this study performs a rigorous fit of vortex displacements to stable Lévy distributions. The objective is to identify if the "jumpiness" of vortex motion corresponds to specific energy cascade rates at the driving scale versus the dissipation range.
 
-7. **Title: Statistical Mechanics of Vortex Merging Events**
-   Research Objective: Model vortex interaction as a discrete event-based system to characterize the frequency and spatial distribution of vortex mergers and splits. This analysis will determine if these topological transitions follow a Poisson process or exhibit temporal clustering governed by local flow conditions.
+7. **Title: Influence of Local Density Fluctuations on Vortex Mobility**
+   Despite the near-unity density in this isothermal simulation, subtle variations in ρ may correlate with vortex mobility. This research investigates whether vortices are "trapped" in regions of local density minima or if they exhibit higher mobility in high-density filaments, linking scalar field topology to vortex trajectory statistics.
 
-8. **Title: Velocity Gradient Tensor Invariants in Turbulent Dissipation**
-   Research Objective: Map the distribution of the velocity gradient tensor invariants (Q and R) throughout the 128³ domain over time. The objective is to identify the "teardrop" shape evolution in the Q-R plane and determine how frequently local flow regions transition between vortex-dominated and strain-dominated regimes.
+8. **Title: Multi-Scale Analysis of Vortex Trajectory MSD**
+   This study examines the MSD of vortex trajectories across multiple time-lag scales to identify potential transitions in diffusion regimes. The objective is to determine if vortices exhibit normal diffusion at short time-scales (viscous/small-scale interaction) and superdiffusion at long time-scales (large-scale turbulent advection).
 
-9. **Title: Spatio-Temporal Intermittency of Dissipation Rates**
-   Research Objective: Evaluate the spatial intermittency of the energy dissipation rate by calculating the probability density functions of local strain rates at varying spatial offsets. This seeks to clarify if the dissipation is concentrated in specific "sheets" or "filaments" and how this intermittency evolves as the simulation reaches a statistically steady state.
+9. **Title: Vortex Birth and Death: Statistical Signatures of Turbulence Decay**
+   This research tracks the birth-rate and death-rate of vortex structures throughout the simulation duration. By analyzing the frequency of vortex creation and annihilation events, we can relate these topological changes to the energy injection rate and the overall statistical stationarity of the turbulent field.
 
-10. **Title: Acoustic Signature of Subsonic Turbulence**
-   Research Objective: By decomposing the velocity field into solenoidal and compressive components, determine the fraction of kinetic energy that manifests as pressure-driven acoustic waves. This research aims to quantify the "noise" generated by the turbulence within the isothermal unit box.
+10. **Title: Quantifying the Influence of Periodic Boundaries on Trajectory Statistics**
+   This study evaluates how the periodic boundary conditions affect the long-term MSD calculations of vortex trajectories. By comparing MSD results using standard Euclidean distance versus minimum-image convention, we quantify the systematic errors introduced by periodic domain wrapping on the classification of Lévy flight versus Brownian motion.
 
 
 
+Human feedback:
+The research must focus specifically on: (1) detecting and identifying individual vortices in the 3D turbulence simulation using Q-criterion or vorticity thresholding, (2) tracking the centres of vorticity of individual vortices through time across all 1001 snapshots, (3) statistically characterising whether vortex centre trajectories follow a Gaussian random walk (normal diffusion, MSD ~ t) or a Lévy flight (superdiffusion, heavy-tailed step distribution, MSD ~ t^alpha with alpha > 1). The paper must include many plots: vorticity fields, vortex trajectories in 3D, step-size distributions with Gaussian and Lévy fits, MSD vs. lag time, displacement distribution tail analysis. The idea should be centred squarely on this vortex-tracking and diffusion-classification problem.
+
+Take into account the human feedback when selecting the best idea. The feedback may provide guidance on preferred research directions, constraints, or specific aspects to prioritize.
 
 
 
@@ -163,8 +167,8 @@ In <IDEA>, put the idea you have selected
 
 ###### RESPONSE [model: gemini-3.1-flash-lite-preview] ########
 \begin{IDEA}
-Title: Topological Persistence of Vortex Filaments
+Title: Scaling of Vortex Displacement Distributions in Isothermal Turbulence
 
-Research Objective: Quantify the lifetime and morphological stability of vortex filaments using persistent homology. By tracking the birth and death of topological features in the vorticity field, determine if long-lived filaments represent coherent "backbones" of the turbulent cascade or transient stochastic fluctuations.
+Focusing on the heavy tails of step-size distributions, this study performs a rigorous fit of vortex displacements to stable Lévy distributions. The objective is to identify if the "jumpiness" of vortex motion corresponds to specific energy cascade rates at the driving scale versus the dissipation range.
 \end{IDEA}
 
