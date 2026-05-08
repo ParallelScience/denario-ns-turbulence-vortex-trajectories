@@ -1,0 +1,7 @@
+Classifier: Step 1 — Determining archive...
+  Archive: physics — The paper focuses on fluid dynamics and the analysis of turbulent flows, which falls under the scope of the physics archive.
+Classifier: Step 2 — Determining subcategory within 'physics'...
+  Primary: physics.flu-dyn
+  Secondary: physics.comp-ph
+  Justification: The paper focuses on the Lagrangian transport of vortex structures in 3D turbulence, which is a core topic in fluid dynamics. The use of high-resolution direct numerical simulations and statistical analysis of trajectories also makes physics.comp-ph a relevant secondary category.
+Classification completed in 0 min 2 sec. Cost: $0.0000

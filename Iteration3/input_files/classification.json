@@ -1,0 +1,7 @@
+{
+  "primary_category": "physics.flu-dyn",
+  "secondary_categories": [
+    "physics.comp-ph"
+  ],
+  "justification": "The paper focuses on the Lagrangian transport of vortex structures in 3D turbulence, which is a core topic in fluid dynamics. The use of high-resolution direct numerical simulations and statistical analysis of trajectories also makes physics.comp-ph a relevant secondary category."
+}
