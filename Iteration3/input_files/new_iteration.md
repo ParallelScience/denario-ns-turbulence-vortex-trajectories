@@ -1,0 +1,6 @@
+- Decision: ITERATE
+- Justification: The project has reached a high level of maturity, successfully debunking the initial Lévy flight hypothesis and establishing a robust physical mechanism (correlated persistent random walk). The proposed changes are not "unnecessary complexity"; they are essential "closing arguments" that transform a set of observations into a definitive scientific narrative. Specifically:
+1. **Addressing the Y-axis anomaly** is critical for technical integrity; if the anisotropy is a coordinate artifact, it must be acknowledged or corrected to avoid reviewer criticism.
+2. **Comparing interacting vs. isolated trajectories** provides the "smoking gun" for the mechanism of superdiffusion, which is the core scientific contribution.
+3. **Calculating the integral time scale $T_L$** provides the theoretical bridge between the forcing scale and the observed transport regime, satisfying the "So What?" factor by grounding the empirical results in turbulence theory.
+The ROI is high because these steps require data re-processing rather than new simulations, and they directly elevate the manuscript from a descriptive report to a high-impact study suitable for a top-tier fluid dynamics journal.
