@@ -1,0 +1,156 @@
+
+###### PROMPT BEGINS ########
+Human: You are provided with:
+- a description of the data
+- an idea
+- research plan to carry out the idea.
+
+Your task is to provide suggestions on how to improve the plan.
+Take into account and potential feedback (if any).
+If the plan is already good enough, do not give suggestions to improve it. If this is not first iteration, you will also be provided with the previous research plan along with some feedback on it. If this is the case, take into account the feedback provided when designing the new research plan. It is good to have a detailed plan, but not to have an overly complicated plan. If you dont have suggestions, just say that you dont have further suggestions. The idea should remain the same. No need to add code to the research plan, as another agent will write code given the research plan.
+
+Data description:
+
+# NS Simulation Dataset — 3D Driven Turbulence (128³)
+
+## Overview
+
+This dataset contains 1001 snapshots from a 3D isothermal hydrodynamic driven turbulence simulation run with AthenaK. The simulation models subsonic turbulence driven on large scales in a periodic unit box. The data are stored as Legacy VTK binary files on the Hugging Face Hub at `pedrota2000/NS_simulation` (HF token: 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).
+
+**A 13-snapshot sample has been pre-downloaded** to `/home/node/work/projects/ns_turbulence_v1/data_sample/`, covering indices 18903, 18953, 19003, 19053, 19103, 19203, 19303, 19403, 19503, 19603, 19703, 19803, 19903.
+
+For full analysis, **all 1001 files must be downloaded** from Hugging Face using `huggingface_hub.hf_hub_download` with `repo_id="pedrota2000/NS_simulation"`, `repo_type="dataset"`, `token="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"`. Download to a local directory such as `/home/node/work/projects/ns_turbulence_v1/data/`. Files follow the naming pattern `Turb.hydro_w.NNNNN.vtk` where NNNNN ranges from 18903 to 19903. Each file is ~42 MB, total ~42 GB.
+
+## File Format and Reading
+
+Files are Legacy VTK binary (DATASET STRUCTURED_POINTS) and can be read with `pyvista`:
+
+```python
+import pyvista as pv
+mesh = pv.read("/home/node/work/projects/ns_turbulence_v1/data/Turb.hydro_w.18903.vtk")
+dens = mesh["dens"].reshape(128, 128, 128)
+velx = mesh["velx"].reshape(128, 128, 128)
+vely = mesh["vely"].reshape(128, 128, 128)
+velz = mesh["velz"].reshape(128, 128, 128)
+```
+
+## Grid Geometry
+
+- **Dimensions**: 128 × 128 × 128 cells (128³ = 2,097,152 cells per field)
+- **Domain**: [-0.5, 0.5]³ (unit box, periodic on all faces)
+- **Cell spacing**: dx = dy = dz = 1/128 ≈ 0.0078125
+- **Cell centres**: from -0.5 + dx/2 to 0.5 - dx/2 in each dimension
+
+## Data Fields (per file, cell-centred scalars)
+
+| Field | Shape (reshaped) | dtype | Physical range (observed) | Description |
+|-------|-----------------|-------|---------------------------|-------------|
+| `dens` | (128,128,128) | float32 | [0.985, 1.007] | Mass density ρ (near-unity; isothermal subsonic) |
+| `velx` | (128,128,128) | float32 | [-0.865, 0.691] | Velocity x-component v_x |
+| `vely` | (128,128,128) | float32 | [-0.687, 0.717] | Velocity y-component v_y |
+| `velz` | (128,128,128) | float32 | [-0.795, 0.853] | Velocity z-component v_z |
+| `s_00` | (128,128,128) | float32 | ≈ 0.047 (uniform) | Passive scalar tracer (uniform; not useful for dynamics) |
+
+## Temporal Structure
+
+- **Total snapshots**: 1001 (indices 18903–19903 inclusive)
+- **Simulation time**: t ≈ 189.03 to 199.03 (output cadence Δt = 0.01 per snapshot)
+- **Total time span**: Δt_total ≈ 10.0 simulation time units
+- **Snapshot index → simulation time**: t = index × 0.01
+
+## Simulation Parameters
+
+- Code: AthenaK
+- EOS: Isothermal, sound speed c_s = 5.0
+- Turbulence driving: solenoidal (divergence-free), dedt = 1×10⁻⁴, correlation time τ_corr = 5.0
+- Driving wavenumber: n_low=1, n_high=3 (peak at n=2 → large-scale forcing)
+- Time integrator: RK2, CFL = 0.3
+- Riemann solver: HLLE, reconstruction: PLM
+- Boundary conditions: periodic on all faces
+
+## Vorticity
+
+The 3D vorticity vector ω = ∇ × v has components:
+- ω_x = ∂v_z/∂y − ∂v_y/∂z
+- ω_y = ∂v_x/∂z − ∂v_z/∂x
+- ω_z = ∂v_y/∂x − ∂v_x/∂y
+
+Observed vorticity magnitude |ω|: mean ≈ 6.4, max ≈ 28.4 (at t=189.03).
+Vorticity is computed via finite differences (np.gradient) on the 128³ grid with spacing dx=0.0078125.
+
+## Research Objective
+
+**Primary task:** Identify vortices in the 3D turbulence simulation and track their centres of vorticity through time. For each identified vortex, compute how its centre position evolves as a function of simulation time. Then statistically characterise whether the vortex centre trajectories are consistent with:
+1. A **Gaussian random walk** (Brownian motion): step sizes drawn from a Gaussian distribution, MSD ∝ t (normal diffusion)
+2. A **Lévy flight**: step sizes drawn from a heavy-tailed (power-law) distribution, MSD ∝ t^α with α > 1 (superdiffusion)
+
+**Methodology hints:**
+- **Vortex detection**: Use the Q-criterion (Q = 0.5*(|Ω|² − |S|²) > threshold, where Ω is the antisymmetric part and S is the symmetric part of the velocity gradient tensor ∇v) or the λ₂ criterion. Label connected regions above threshold as individual vortex structures. Alternatively use vorticity magnitude thresholding (|ω| > threshold × mean(|ω|)).
+- **Centre of vorticity**: For each labelled vortex region, compute the vorticity-weighted centroid: x_c = Σ(|ω_i| * x_i) / Σ|ω_i| for x, y, z coordinates.
+- **Vortex tracking**: Match vortices across consecutive timesteps using nearest-neighbour matching on centroid positions (Hungarian algorithm or simple greedy nearest-neighbour). Handle vortex birth/death (merge/split events).
+- **Trajectory statistics**: For each tracked vortex trajectory of length N_t, compute step displacements Δr_i = r_{i+1} − r_i. Analyse the distribution of |Δr| — fit to Gaussian vs. Lévy (stable distribution or power-law tail). Compute MSD(τ) = <|r(t+τ) − r(t)|²> and fit the diffusion exponent α.
+- **Periodic boundaries**: The domain is periodic. Use minimum-image convention for displacement calculations: Δx = ((x2−x1+0.5) mod 1.0) − 0.5.
+
+## Storage and Memory Considerations
+
+- Each VTK file: ~42 MB on disk, ~40 MB in memory (5 fields × 128³ × 4 bytes)
+- All 1001 files: ~42 GB on disk — download to `/home/node/work/projects/ns_turbulence_v1/data/`
+- Process files sequentially (one at a time) to avoid memory exhaustion
+- For parallel downloading: use up to 8 threads
+- The pre-downloaded sample at `/home/node/work/projects/ns_turbulence_v1/data_sample/` can be used for algorithm development before running on the full dataset
+
+
+Idea:
+**Title**: Multiscale Statistical Mapping of Lagrangian Vortex Diffusion in 3D Isothermal Turbulence
+
+**Description**: This study quantifies vortex transport regimes by processing the 1001-snapshot AthenaK dataset through a robust, noise-mitigating pipeline. To ensure physical validity, velocity fields are pre-processed with a Gaussian low-pass filter ($\sigma=1.0$ voxel) to suppress numerical artifacts before computing the velocity gradient tensor $\nabla \mathbf{v}$ and the Q-criterion. Vortices are identified via an adaptive, local-thresholding scheme ($Q > \text{local\_mean}(Q) + 3\sigma_{\text{local}}$) to account for spatial intermittency, with only structures persisting for $\geq 10$ timesteps retained to filter transient noise. We track these persistent vorticity-weighted centroids using a greedy nearest-neighbor approach optimized for periodic boundaries via the minimum-image convention. Statistical characterization is performed by calculating the Mean Squared Displacement (MSD) $\langle |r(t+\tau) - r(t)|^2 \rangle \propto \tau^\alpha$ and fitting step-size distributions to Gaussian and Lévy stable models. The final analysis integrates 3D trajectory visualizations, log-log MSD plots, and Kolmogorov-Smirnov goodness-of-fit tests to isolate the diffusion exponent $\alpha$ and determine whether vortex trajectories exhibit Brownian motion or Lévy-flight superdiffusion within the resolved inertial range.
+
+Research plan:
+1. **Data Acquisition and Pre-processing**: Download the full 1001-snapshot dataset from the Hugging Face repository to the local storage directory using 8 parallel threads. For each snapshot, load the velocity fields (`velx`, `vely`, `velz`) and apply a Gaussian low-pass filter with $\sigma=1.0$ voxel to suppress high-frequency numerical noise.
+
+2. **Vortex Identification**: Compute the velocity gradient tensor $\nabla \mathbf{v}$ using central finite differences. Calculate the Q-criterion $Q = 0.5(|\Omega|^2 - |S|^2)$, where $\Omega$ and $S$ are the antisymmetric and symmetric parts of $\nabla \mathbf{v}$, respectively. Identify vortex regions by applying an adaptive threshold $Q > \mu_Q + 3\sigma_Q$, where $\mu_Q$ and $\sigma_Q$ are the local mean and standard deviation of $Q$ within the domain. Use a connected-components labeling algorithm to isolate individual 3D vortex structures.
+
+3. **Centroid Calculation**: For each identified vortex structure, calculate the vorticity-weighted centroid $(x_c, y_c, z_c)$ using the formula $x_{c,i} = \frac{\sum (|\omega_j| \cdot x_{j,i})}{\sum |\omega_j|}$, where $|\omega_j|$ is the magnitude of the vorticity vector at cell $j$ within the labeled region.
+
+4. **Vortex Tracking**: Implement a greedy nearest-neighbor matching algorithm to link vortex centroids across consecutive timesteps. Incorporate the minimum-image convention for periodic boundaries: $\Delta x_i = ((x_{2,i} - x_{1,i} + 0.5) \pmod{1.0}) - 0.5$. Maintain a registry of active trajectories and filter out any tracks that persist for fewer than 10 consecutive timesteps to ensure statistical robustness.
+
+5. **Trajectory Analysis**: For each persistent trajectory, compute the step displacements $\Delta \mathbf{r}_i = \mathbf{r}_{i+1} - \mathbf{r}_i$ using the periodic boundary correction. Store these displacements to construct the probability density function (PDF) of step sizes $|\Delta \mathbf{r}|$.
+
+6. **Diffusion Characterization**: Calculate the Mean Squared Displacement (MSD) as a function of time lag $\tau$, defined as $\text{MSD}(\tau) = \langle |\mathbf{r}(t+\tau) - \mathbf{r}(t)|^2 \rangle$. Perform a linear regression on the log-log plot of $\text{MSD}(\tau)$ vs. $\tau$ to extract the diffusion exponent $\alpha$ from the relation $\text{MSD} \propto \tau^\alpha$.
+
+7. **Statistical Modeling**: Fit the distribution of step sizes $|\Delta \mathbf{r}|$ to both a Gaussian distribution (representing Brownian motion) and a Lévy stable distribution (representing Lévy flights). Use the Kolmogorov-Smirnov (K-S) test to compare the goodness-of-fit for both models and determine the statistical significance of the observed diffusion regime.
+
+8. **Data Aggregation and Visualization**: Compile the results into a summary dataset containing trajectory lengths, diffusion exponents $\alpha$, and K-S test statistics. Generate visualizations including 3D trajectory plots of selected vortices and log-log MSD plots to illustrate the transition between diffusive regimes.
+
+Previous research plan:
+None
+
+Feedback on previous research plan:
+None
+
+
+Respond in this format:
+
+\\begin{SUGGESTIONS}
+<SUGGESTIONS>
+\\end{SUGGESTIONS}
+
+In <SUGGESTIONS> put the suggestions to improve the plan.
+
+###### PROMPT ENDS ########
+
+###### RESPONSE [model: gemini-3.1-flash-lite-preview] ########
+\begin{SUGGESTIONS}
+The research plan is well-structured and scientifically sound. I have a few suggestions to improve the robustness and feasibility of the implementation:
+
+1. **Refine Vortex Identification (Adaptive Thresholding)**: In step 2, you mention using a local threshold $Q > \mu_Q + 3\sigma_Q$. Since the domain is 128³, calculating local statistics for every voxel might be computationally expensive or lead to fragmented structures. Consider using a global threshold based on the global mean and standard deviation of $Q$ first, or a sliding window approach if local intermittency is the primary concern. Also, ensure you define a minimum volume (number of voxels) for a "vortex" to avoid capturing noise-induced artifacts that pass the Q-criterion threshold.
+
+2. **Tracking Robustness**: A simple greedy nearest-neighbor approach is prone to errors in dense turbulence where vortices frequently merge or split. While the plan mentions filtering tracks < 10 timesteps, consider adding a "maximum displacement" constraint (a search radius) for the nearest-neighbor matching to prevent linking two physically unrelated vortices that happen to be the closest in the next frame.
+
+3. **MSD Calculation**: In step 6, ensure the MSD calculation accounts for the periodic domain correctly. When calculating $\mathbf{r}(t+\tau) - \mathbf{r}(t)$, the displacement must be computed using the minimum-image convention (as you correctly identified for step sizes in step 4). If a vortex crosses the periodic boundary, the cumulative displacement should be "unwrapped" to maintain a continuous trajectory, otherwise, the MSD will be artificially capped by the box size.
+
+4. **Computational Efficiency**: Since you are processing 1001 files, consider saving the intermediate "vortex centroid" data (e.g., as a CSV or HDF5 file) after step 3/4. This allows you to perform the statistical analysis (steps 5-7) iteratively without re-reading the 42GB of VTK data if you need to adjust your statistical models or thresholds.
+
+5. **Vorticity Calculation**: Ensure that the `np.gradient` function is used with the correct `dx` (0.0078125) to ensure the vorticity magnitude is in physical units, which is crucial for the weighting in the centroid calculation.
+\end{SUGGESTIONS}
+
